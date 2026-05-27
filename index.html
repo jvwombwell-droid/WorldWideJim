@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jim's Betting Results • Personal Edge Log</title>
+  <meta name="description" content="Personal sports betting pick log — track units, results, and stats locally.">
+  <meta name="theme-color" content="#0a0a0a">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon.svg">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="styles.css">
+  <!-- html2canvas for high-quality bet slip image exports (used by Share Image feature) -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
+    
+    :root {
+      --primary: #f4c430;
+    }
+    
+    body {
+      font-family: 'Inter', system_ui, sans-serif;
+    }
+    
+    .font-display {
+      font-family: 'Space Grotesk', 'Inter', sans-serif;
+      font-weight: 600;
+    }
+
+    .sports-gradient {
+      background: linear-gradient(135deg, #111111 0%, #1a1a1a 100%);
+    }
+
+    .betting-card {
+      transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
+                  box-shadow 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+    }
+    
+    .betting-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    }
+
+    .nav-link {
+      transition: all 0.1s ease;
+    }
+    
+    .nav-link:hover {
+      color: #3b82f6;
+    }
+
+    .nav-link.active {
+      color: #f4c430;
+      border-bottom: 2px solid #f4c430;
+    }
+
+    .stat-value {
+      font-variant-numeric: tabular-nums;
+    }
+
+    .pick-row {
+      transition: background-color 0.1s ease;
+    }
+    
+    .pick-row:hover {
+      background-color: #1f1f1f;
+    }
+
+    .status-badge {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.125rem 0.625rem;
+      border-radius: 9999px;
+    }
+
+    .status-pending { background-color: #3f3f46; color: #a1a1aa; }
+    .status-won { background-color: #052e16; color: #4ade80; }
+    .status-lost { background-color: #450a0a; color: #f87171; }
+    .status-push { background-color: #27251f; color: #f4c430; }
+
+    .profit-positive { color: #4ade80; font-weight: 600; }
+    .profit-negative { color: #f87171; font-weight: 600; }
+
+    .section-header {
+      font-size: 1.75rem;
+      line-height: 1.1;
+      letter-spacing: -.025em;
+    }
+
+    .modal {
+      animation: modalPop 0.2s cubic-bezier(0.23, 1.0, 0.32, 1);
+    }
+
+    .sports-bg {
+      background-size: cover;
+      background-position: center;
+    }
+
+    .hero-overlay {
+      background: linear-gradient(
+        to bottom,
+        rgba(10, 10, 12, 0.4) 0%,
+        rgba(10, 10, 12, 0.75) 55%,
+        rgba(10, 10, 12, 0.94) 100%
+      );
+    }
+
+    .league-pill {
+      font-size: 0.65rem;
+      padding: 1px 9px;
+      font-weight: 700;
+      letter-spacing: -.5px;
+    }
+
+    .data-table th {
+      font-weight: 600;
+      color: #71717a;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .metric-card {
+      background: #18181b;
+      border: 1px solid #27272a;
+    }
+
+    .pick-card {
+      border: 1px solid #27272a;
+      background: #18181b;
+    }
+
+    .jim-gold {
+      color: #f4c430;
+    }
+
+    /* Blue secondary accent for links, filters, and secondary actions */
+    .accent-blue {
+      color: #3b82f6;
+    }
+    .accent-blue:hover {
+      color: #60a5fa;
+    }
+    .bg-blue-accent {
+      background-color: #3b82f6;
+    }
+    .bg-blue-accent:hover {
+      background-color: #2563eb;
+    }
+    .border-blue-accent {
+      border-color: #3b82f6;
+    }
+    .focus-blue:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    }
+
+    .toast {
+      animation: slideUp 0.25s ease forwards;
+    }
+
+    .image-glow {
+      box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.4);
+    }
+  </style>
+</head>
+<body class="bg-zinc-950 text-zinc-200">
+  <!-- NAV -->
+  <nav class="bg-zinc-900 border-b border-zinc-800 sticky top-0 z-50">
+    <div class="max-w-screen-2xl mx-auto">
+      <div class="px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-x-3">
+          <div class="flex items-center gap-x-2.5">
+            <div class="w-9 h-9 bg-gradient-to-br from-amber-400 to-yellow-500 rounded-xl flex items-center justify-center shadow-inner">
+              <i class="fa-solid fa-tachometer-alt text-zinc-950 text-3xl font-black"></i>
+            </div>
+            <div>
+              <span class="font-display text-2xl tracking-tighter font-semibold">Jim's</span>
+              <span class="font-display text-2xl tracking-tighter text-amber-400 font-semibold">Betting Results</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Desktop Nav -->
+        <div class="hidden md:flex items-center gap-x-8 text-sm">
+          <a href="#dashboard" onclick="document.getElementById('dashboard').scrollIntoView({ behavior: 'smooth' })" class="nav-link px-1 py-1 text-sm font-medium active">Dashboard</a>
+          <a href="#submit" onclick="document.getElementById('submit').scrollIntoView({ behavior: 'smooth' })" class="nav-link px-1 py-1 text-sm font-medium">Submit Pick</a>
+          <a href="#mypicks" onclick="document.getElementById('mypicks').scrollIntoView({ behavior: 'smooth' })" class="nav-link px-1 py-1 text-sm font-medium">My Picks</a>
+        </div>
+
+        <div class="flex items-center gap-x-3">
+          <!-- User -->
+          <div class="flex items-center gap-x-2 bg-zinc-900 border border-zinc-800 rounded-2xl px-3 py-1.5">
+            <div class="w-7 h-7 rounded-full ring-1 ring-offset-2 ring-offset-zinc-950 ring-zinc-700 overflow-hidden">
+              <img src="images/nba-dunk.jpg" alt="" class="w-full h-full object-cover" width="28" height="28" loading="eager">
+            </div>
+            <div class="hidden sm:block">
+              <input id="current-user" type="text" value="Jim" 
+                     class="bg-transparent text-sm font-semibold w-24 focus:outline-none" 
+                     onchange="updateCurrentUser(this.value)">
+            </div>
+          </div>
+
+          <button onclick="resetAllData()" 
+                  class="hidden md:flex items-center gap-x-2 text-xs px-3 py-2 rounded-2xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-blue-400 hover:text-blue-300 transition-colors"
+                  title="Permanently delete all your saved picks and start fresh">
+            <i class="fa-solid fa-undo text-xs"></i>
+            <span class="hidden lg:inline">Clear All Data</span>
+          </button>
+
+          <!-- Mobile menu -->
+          <button id="mobile-menu-btn"
+                  class="md:hidden w-10 h-10 flex items-center justify-center text-xl text-zinc-400 hover:text-white"
+                  onclick="toggleMobileMenu()">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Menu -->
+    <div id="mobile-menu" class="hidden md:hidden border-t border-zinc-800 bg-zinc-900 px-6 py-3">
+      <div class="flex flex-col gap-y-1 text-sm">
+        <a href="#dashboard" class="py-2 px-3 hover:bg-zinc-800 rounded-xl nav-link" onclick="toggleMobileMenu()">Dashboard</a>
+        <a href="#submit" class="py-2 px-3 hover:bg-zinc-800 rounded-xl nav-link" onclick="toggleMobileMenu()">Submit Pick</a>
+        <a href="#mypicks" class="py-2 px-3 hover:bg-zinc-800 rounded-xl nav-link" onclick="toggleMobileMenu()">My Picks</a>
+        <div class="pt-2 border-t border-zinc-800 mt-1">
+          <button onclick="resetAllData();toggleMobileMenu()" class="w-full text-left py-2 px-3 text-blue-400 hover:text-blue-300 text-sm">Clear All Data</button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <header class="relative h-[560px] md:h-[500px] flex items-center justify-center overflow-hidden">
+    <img src="images/sports-arena.jpg" alt="" class="hero-photo absolute inset-0 w-full h-full object-cover" width="1920" height="1080" fetchpriority="high">
+    <div class="absolute inset-0 hero-bg"></div>
+    <div class="hero-overlay absolute inset-0"></div>
+    
+    <div class="relative max-w-screen-2xl px-6 text-center z-10">
+      <div class="inline-flex items-center gap-x-2 bg-white/10 backdrop-blur-md border border-white/20 text-white text-xs tracking-[2px] font-medium px-4 h-8 rounded-3xl mb-4">
+        <div class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+        PERSONAL LOG • 100% TRANSPARENT
+      </div>
+      
+      <h1 class="font-display text-6xl md:text-7xl tracking-tighter font-semibold leading-none mb-3">
+        TRACK YOUR<br>EDGES. <span class="jim-gold">OWN THE LOG.</span>
+      </h1>
+      <p class="max-w-md mx-auto text-lg md:text-xl text-zinc-300 mb-8">
+        Your private edge log — track, grade, and analyze every pick across the NBA, NFL, NHL &amp; MLB.
+      </p>
+
+      <div class="flex flex-col sm:flex-row gap-3 justify-center">
+        <button onclick="document.getElementById('submit').scrollIntoView({ behavior: 'smooth' })" 
+                class="px-8 h-12 rounded-2xl bg-amber-400 hover:bg-amber-300 active:bg-amber-500 transition-all text-zinc-950 font-semibold flex items-center justify-center gap-x-2 shadow-lg shadow-amber-950/30">
+          <i class="fa-solid fa-plus"></i>
+          <span>SUBMIT A PICK</span>
+        </button>
+        <button onclick="document.getElementById('mypicks').scrollIntoView({ behavior: 'smooth' })" 
+                class="px-7 h-12 rounded-2xl border border-white/30 hover:bg-white/10 transition-all font-medium flex items-center justify-center gap-x-2">
+          <span>VIEW MY PICKS</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="hidden xl:block absolute bottom-10 right-10 w-40 h-40 rounded-3xl overflow-hidden border border-white/15 shadow-2xl sport-accent-card rotate-2">
+      <img src="images/nba-dunk.jpg" alt="" class="w-full h-full object-cover" width="160" height="160" loading="lazy">
+    </div>
+    <div class="hidden xl:block absolute top-12 left-10 w-32 h-32 rounded-3xl overflow-hidden border border-white/15 shadow-2xl sport-accent-card -rotate-6">
+      <img src="images/nfl-catch.jpg" alt="" class="w-full h-full object-cover" width="128" height="128" loading="lazy">
+    </div>
+  </header>
+
+  <!-- QUICK STATS BAR -->
+  <div id="dashboard" class="max-w-screen-2xl mx-auto px-6 -mt-6 relative z-20">
+    <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-3">
+      <div class="flex flex-wrap items-center gap-2">
+        <select id="stats-sport-filter" onchange="onStatsFilterChange()"
+                class="bg-zinc-900 border border-zinc-700 text-sm px-3 py-2 rounded-2xl focus:border-blue-500">
+          <option value="">All Sports</option>
+          <option value="NBA">NBA</option>
+          <option value="NFL">NFL</option>
+          <option value="NHL">NHL</option>
+          <option value="MLB">MLB</option>
+          <option value="NCAAB">NCAAB</option>
+          <option value="NCAAF">NCAAF</option>
+          <option value="Multi">Multi</option>
+          <option value="Other">Other</option>
+        </select>
+        <select id="stats-period-filter" onchange="onStatsFilterChange()"
+                class="bg-zinc-900 border border-zinc-700 text-sm px-3 py-2 rounded-2xl focus:border-blue-500">
+          <option value="all">All Time</option>
+          <option value="7d">Last 7 Days</option>
+          <option value="30d">Last 30 Days</option>
+          <option value="ytd">Year to Date</option>
+        </select>
+      </div>
+      <div class="flex items-center gap-2 text-sm">
+        <label class="text-xs text-zinc-500 whitespace-nowrap">1 unit = $</label>
+        <input id="unit-dollar-value" type="number" min="0" step="1" placeholder="optional"
+               onchange="onUnitSettingChange()"
+               class="w-24 bg-zinc-900 border border-zinc-700 px-3 py-2 rounded-2xl text-sm focus:border-blue-500">
+      </div>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div class="metric-card rounded-3xl px-5 py-4 flex items-center justify-between border border-zinc-800">
+        <div>
+          <div class="text-xs text-zinc-500 tracking-widest">TOTAL PICKS</div>
+          <div id="stat-total" class="text-4xl font-semibold tabular-nums stat-value">--</div>
+        </div>
+        <div class="text-4xl opacity-20"><i class="fa-solid fa-list-check"></i></div>
+      </div>
+      <div class="metric-card rounded-3xl px-5 py-4 flex items-center justify-between border border-zinc-800">
+        <div>
+          <div class="text-xs text-zinc-500 tracking-widest">WIN RATE</div>
+          <div id="stat-winrate" class="text-4xl font-semibold tabular-nums stat-value">--<span class="text-xl font-normal align-super">%</span></div>
+        </div>
+        <div class="text-4xl text-emerald-400/70"><i class="fa-solid fa-chart-line"></i></div>
+      </div>
+      <div class="metric-card rounded-3xl px-5 py-4 flex items-center justify-between border border-zinc-800">
+        <div>
+          <div id="stat-period-label" class="text-xs text-zinc-500 tracking-widest">NET PROFIT (ALL TIME)</div>
+          <div id="stat-profit" class="text-4xl font-semibold tabular-nums stat-value text-emerald-400">--u</div>
+        </div>
+        <div class="text-4xl text-emerald-400/70"><i class="fa-solid fa-chart-line"></i></div>
+      </div>
+      <div class="metric-card rounded-3xl px-5 py-4 flex items-center justify-between border border-zinc-800">
+        <div>
+          <div class="text-xs text-zinc-500 tracking-widest">BEST STREAK</div>
+          <div id="stat-streak" class="text-4xl font-semibold tabular-nums stat-value">-- <span class="text-lg font-normal text-emerald-400">W</span></div>
+        </div>
+        <div class="text-4xl opacity-20"><i class="fa-solid fa-fire"></i></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- League visuals -->
+  <div class="max-w-screen-2xl mx-auto px-6 pt-8 pb-2">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <a href="#submit" class="sport-tile group relative rounded-2xl overflow-hidden aspect-[16/10] border border-zinc-800">
+        <img src="images/nba-dunk.jpg" alt="NBA basketball" class="w-full h-full object-cover" width="640" height="400" loading="lazy">
+        <div class="sport-tile-label absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent px-3 py-2.5">
+          <span class="text-xs font-bold tracking-widest text-white">NBA</span>
+        </div>
+      </a>
+      <a href="#submit" class="sport-tile group relative rounded-2xl overflow-hidden aspect-[16/10] border border-zinc-800">
+        <img src="images/nfl-catch.jpg" alt="NFL football" class="w-full h-full object-cover" width="640" height="400" loading="lazy">
+        <div class="sport-tile-label absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent px-3 py-2.5">
+          <span class="text-xs font-bold tracking-widest text-white">NFL</span>
+        </div>
+      </a>
+      <a href="#submit" class="sport-tile group relative rounded-2xl overflow-hidden aspect-[16/10] border border-zinc-800">
+        <img src="images/nhl-save.jpg" alt="NHL hockey" class="w-full h-full object-cover" width="640" height="400" loading="lazy">
+        <div class="sport-tile-label absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent px-3 py-2.5">
+          <span class="text-xs font-bold tracking-widest text-white">NHL</span>
+        </div>
+      </a>
+      <a href="#submit" class="sport-tile group relative rounded-2xl overflow-hidden aspect-[16/10] border border-zinc-800">
+        <img src="images/mlb-homer.jpg" alt="MLB baseball" class="w-full h-full object-cover" width="640" height="400" loading="lazy">
+        <div class="sport-tile-label absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent px-3 py-2.5">
+          <span class="text-xs font-bold tracking-widest text-white">MLB</span>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <!-- SUBMIT PICK SECTION -->
+  <div id="submit" class="max-w-screen-2xl mx-auto px-6 pt-8 pb-8">
+    <div class="flex items-end justify-between mb-5">
+      <div>
+        <span class="uppercase tracking-[3px] text-xs text-amber-400 font-semibold">LOG YOUR EDGE</span>
+        <h2 class="section-header font-display tracking-[-1.5px]">Submit a New Pick</h2>
+      </div>
+      <button onclick="addDemoPick()" 
+              class="hidden sm:flex items-center gap-x-2 text-sm px-4 h-9 bg-zinc-900 hover:bg-zinc-800 transition border border-zinc-700 rounded-2xl text-blue-400 hover:text-blue-300">
+        <i class="fa-solid fa-magic"></i>
+        <span>Add Demo Pick</span>
+      </button>
+    </div>
+
+    <div class="betting-card bg-zinc-900 border border-zinc-800 rounded-3xl p-6 md:p-8">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-x-6 gap-y-5">
+        
+        <!-- User / Sport row -->
+        <div class="lg:col-span-2">
+          <label class="block text-xs font-semibold tracking-widest text-zinc-400 mb-1.5">PICK DATE</label>
+          <input id="pick-date" type="date"
+                 class="w-full bg-zinc-950 border border-zinc-700 focus:border-blue-500 focus-blue transition px-4 py-2.5 rounded-2xl text-sm">
+        </div>
+
+        <div class="lg:col-span-2">
+          <label class="block text-xs font-semibold tracking-widest text-zinc-400 mb-1.5">YOUR NAME</label>
+          <input id="pick-user" type="text" value="Jim" 
+                 class="w-full bg-zinc-950 border border-zinc-700 focus:border-blue-500 focus-blue transition px-4 py-2.5 rounded-2xl text-sm">
+        </div>
+
+        <div id="pick-sport-wrap" class="lg:col-span-2">
+          <label class="block text-xs font-semibold tracking-widest text-zinc-400 mb-1.5">SPORT / LEAGUE</label>
+          <select id="pick-sport" class="w-full bg-zinc-950 border border-zinc-700 focus:border-blue-500 focus-blue transition px-4 py-2.5 rounded-2xl text-sm">
+            <option value="NBA">NBA • Basketball</option>
+            <option value="NFL">NFL • Football</option>
+            <option value="NHL">NHL • Hockey</option>
+            <option value="MLB">MLB • Baseball</option>
+            <option value="NCAAB">NCAAB • College Hoops</option>
+            <option value="NCAAF">NCAAF • College Football</option>
+            <option value="Other">Other / Soccer / Misc</option>
+          </select>
+        </div>
+
+        <div class="lg:col-span-6">
+          <label id="pick-matchup-label" class="block text-xs font-semibold tracking-widest text-zinc-400 mb-1.5">MATCHUP / GAME</label>
+          <input id="pick-matchup" type="text" placeholder="Lakers vs Warriors" 
+                 class="w-full bg-zinc-950 border border-zinc-700 focus:border-blue-500 focus-blue transition px-4 py-2.5 rounded-2xl text-sm">
+        </div>
+
+        <!-- Pick details -->
+        <div class="lg:col-span-3">
+          <label class="block text-xs font-semibold tracking-widest text-zinc-400 mb-1.5">PICK TYPE</label>
+          <select id="pick-type" class="w-full bg-zinc-950 border border-zinc-700 focus:border-blue-500 focus-blue transition px-4 py-2.5 rounded-2xl text-sm">
+            <option value="Spread">Spread / Handicap</option>
+            <option value="Moneyline">Moneyline</option>
+            <option value="Total">Total (Over/Under)</option>
+            <option value="Prop">Player Prop</option>
+            <option value="Parlay">Parlay / Multi</option>
+          </select>
+        </div>
+
+        <div id="pick-single-selection-wrap" class="lg:col-span-4">
+          <label class="block text-xs font-semibold tracking-widest text-zinc-400 mb-1.5">YOUR SELECTION</label>
+          <input id="pick-selection" type="text" placeholder="LAL -5.5  or  LeBron 28+ pts" 
+                 class="w-full bg-zinc-950 border border-zinc-700 focus:border-blue-500 focus-blue transition px-4 py-2.5 rounded-2xl text-sm">
+        </div>
+
+        <div class="lg:col-span-2">
+          <label class="block text-xs font-semibold tracking-widest text-zinc-400 mb-1.5">ODDS (AMER)</label>
+          <input id="pick-odds" type="text" placeholder="-115" 
+                 class="w-full bg-zinc-950 border border-zinc-700 focus:border-blue-500 focus-blue transition px-4 py-2.5 rounded-2xl text-sm font-mono">
+        </div>
+
+        <div class="lg:col-span-2">
+          <label class="block text-xs font-semibold tracking-widest text-zinc-400 mb-1.5">UNITS</label>
+          <input id="pick-stake" type="number" value="1.0" min="0.25" step="0.25"
+                 class="w-full bg-zinc-950 border border-zinc-700 focus:border-blue-500 focus-blue transition px-4 py-2.5 rounded-2xl text-sm font-mono"
+                 title="Number of units to risk (e.g. 1.0, 1.5, 2.0)">
+        </div>
+
+        <div class="lg:col-span-1">
+          <label class="block text-xs font-semibold tracking-widest text-zinc-400 mb-1.5">CONF.</label>
+          <div class="flex items-center gap-2">
+            <input id="pick-confidence" type="range" min="1" max="10" value="7" step="1" 
+                   class="w-full accent-amber-400" oninput="document.getElementById('conf-val').innerText = this.value">
+            <span id="conf-val" class="font-semibold w-5 text-center">7</span>
+          </div>
+        </div>
+
+        <!-- Parlay legs (shown when Pick Type = Parlay / Multi) -->
+        <div id="parlay-legs-section" class="hidden lg:col-span-12 space-y-3">
+          <div class="flex items-center justify-between">
+            <label class="block text-xs font-semibold tracking-widest text-zinc-400">PARLAY LEGS</label>
+            <button type="button" onclick="addParlayLeg()"
+                    class="text-xs px-3 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-blue-400 hover:text-blue-300 flex items-center gap-1.5">
+              <i class="fa-solid fa-plus text-[10px]"></i>
+              <span>Add Leg</span>
+            </button>
+          </div>
+          <p class="text-xs text-zinc-500 -mt-1">Add at least 2 legs. Combined odds go in <span class="text-zinc-400">ODDS (AMER)</span> above.</p>
+          <div id="parlay-legs-container" class="space-y-2.5"></div>
+        </div>
+
+        <div class="lg:col-span-12">
+          <label class="block text-xs font-semibold tracking-widest text-zinc-400 mb-1.5">NOTES (OPTIONAL)</label>
+          <textarea id="pick-notes" rows="2" placeholder="Strong lean on defense after back-to-back. Line movement favorable." 
+                    class="w-full resize-y bg-zinc-950 border border-zinc-700 focus:border-blue-500 focus-blue transition px-4 py-2.5 rounded-3xl text-sm"></textarea>
+        </div>
+
+        <div class="lg:col-span-12 flex flex-col sm:flex-row items-center justify-end gap-3 pt-2">
+          <button onclick="submitPick()" 
+                  class="w-full sm:w-auto px-9 py-3 rounded-2xl bg-gradient-to-r from-amber-400 to-yellow-400 text-zinc-950 font-bold flex items-center justify-center gap-x-3 hover:brightness-105 active:scale-[0.985] transition">
+            <span>LOG PICK TO RECORD</span>
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MY PICKS / RESULTS SECTION -->
+  <div id="mypicks" class="max-w-screen-2xl mx-auto px-6 py-8 border-t border-zinc-800">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
+      <div>
+        <span class="uppercase text-xs tracking-[3px] text-amber-400 font-semibold">YOUR LOG</span>
+        <h2 class="section-header font-display tracking-[-1.5px]">My Picks &amp; Results</h2>
+      </div>
+      
+      <div class="flex items-center gap-2">
+        <button onclick="showSlipModal('record')" 
+                class="hidden sm:flex items-center gap-x-2 text-sm px-4 h-9 bg-zinc-900 hover:bg-amber-900/30 transition border border-amber-400/30 hover:border-amber-400/60 rounded-2xl text-amber-400 hover:text-amber-300">
+          <i class="fa-solid fa-camera"></i>
+          <span>Share Record Image</span>
+        </button>
+
+        <div class="relative flex-1 md:w-64">
+          <input id="filter-my-picks" type="text" placeholder="Filter matchups..." 
+                 onkeyup="filterMyPicks()" 
+                 class="pl-9 bg-zinc-900 border border-zinc-700 text-sm w-full py-2 rounded-2xl focus:outline-none focus:border-blue-500 focus-blue">
+          <i class="fa-solid fa-search absolute left-3.5 top-2.5 text-zinc-500"></i>
+        </div>
+        
+        <select id="status-filter" onchange="filterMyPicks()" class="bg-zinc-900 border border-zinc-700 text-sm px-3 py-2 rounded-2xl focus:border-blue-500 focus-blue">
+          <option value="">All Statuses</option>
+          <option value="pending">Pending</option>
+          <option value="won">Won</option>
+          <option value="lost">Lost</option>
+          <option value="push">Push</option>
+        </select>
+
+        <button onclick="simulateResultsForPending()" 
+                class="text-xs px-3.5 py-2 bg-zinc-800 hover:bg-zinc-700 transition rounded-2xl flex items-center gap-1.5 border border-zinc-700 text-blue-400 hover:text-blue-300">
+          <i class="fa-solid fa-dice"></i>
+          <span class="hidden sm:inline">Simulate Pending</span>
+        </button>
+        
+        <button onclick="exportToCSV()" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 transition rounded-2xl text-sm flex items-center gap-2 border border-zinc-700 text-blue-400 hover:text-blue-300">
+          <i class="fa-solid fa-download text-xs"></i>
+          <span>CSV</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Picks Table -->
+    <div class="betting-card bg-zinc-900 border border-zinc-800 rounded-3xl overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-[920px] data-table">
+          <thead>
+            <tr class="border-b border-zinc-800 bg-zinc-950">
+              <th class="text-left py-3 pl-6 font-medium">DATE</th>
+              <th class="text-left py-3 font-medium">SPORT</th>
+              <th class="text-left py-3 font-medium">MATCHUP</th>
+              <th class="text-left py-3 font-medium">PICK</th>
+              <th class="text-center py-3 font-medium">ODDS</th>
+              <th class="text-right py-3 pr-2 font-medium">UNITS</th>
+              <th class="text-center py-3 font-medium">STATUS</th>
+              <th class="text-right py-3 pr-6 font-medium">P/L</th>
+              <th class="w-28 text-center py-3 font-medium">ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody id="my-picks-tbody" class="divide-y divide-zinc-800 text-sm">
+            <!-- Populated dynamically by JS -->
+          </tbody>
+        </table>
+      </div>
+      
+      <div id="my-picks-empty" class="hidden px-6 py-12 text-center">
+        <i class="fa-solid fa-inbox text-4xl text-zinc-700 mb-3"></i>
+        <p class="font-medium">No picks yet. Submit your first one above!</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-zinc-800 bg-zinc-950 py-8">
+    <div class="max-w-screen-2xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-y-4 text-xs text-zinc-500">
+      <div>Jim's Betting Results — Your personal betting log. Data stored locally in your browser.</div>
+      <div class="flex items-center gap-x-5">
+        <div>© 2026 • Not financial advice</div>
+        <div class="flex items-center gap-4">
+          <a href="#" class="hover:text-zinc-400">Twitter</a>
+          <a href="#" class="hover:text-zinc-400">Discord</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- EDIT PICK MODAL -->
+  <div id="edit-pick-modal" onclick="if (event.target.id === 'edit-pick-modal') hideEditPickModal()" class="hidden fixed inset-0 bg-black/70 backdrop-blur z-[75] flex items-center justify-center p-4 overflow-y-auto">
+    <div onclick="event.stopImmediatePropagation()" class="modal bg-zinc-900 border border-zinc-700 rounded-3xl w-full max-w-3xl p-6 my-6 max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-5">
+        <div class="font-semibold text-lg">Edit Pick</div>
+        <button onclick="hideEditPickModal()" class="text-2xl text-zinc-400 hover:text-white">×</button>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+        <div class="md:col-span-4">
+          <label class="block text-xs font-semibold tracking-widest text-zinc-400 mb-1.5">PICK DATE</label>
+          <input id="edit-pick-date" type="date" class="w-full bg-zinc-950 border border-zinc-700 px-4 py-2.5 rounded-2xl text-sm">
+        </div>
+        <div id="edit-sport-wrap" class="md:col-span-4">
+          <label class="block text-xs font-semibold tracking-widest text-zinc-400 mb-1.5">SPORT</label>
+          <select id="edit-pick-sport" class="w-full bg-zinc-950 border border-zinc-700 px-4 py-2.5 rounded-2xl text-sm">
+            <option value="NBA">NBA</option>
+            <option value="NFL">NFL</option>
+            <option value="NHL">NHL</option>
+            <option value="MLB">MLB</option>
+            <option value="NCAAB">NCAAB</option>
+            <option value="NCAAF">NCAAF</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="md:col-span-4">
+          <label class="block text-xs font-semibold tracking-widest text-zinc-400 mb-1.5">PICK TYPE</label>
+          <select id="edit-pick-type" onchange="toggleEditPickTypeUI()" class="w-full bg-zinc-950 border border-zinc-700 px-4 py-2.5 rounded-2xl text-sm">
+            <option value="Spread">Spread</option>
+            <option value="Moneyline">Moneyline</option>
+            <option value="Total">Total</option>
+            <option value="Prop">Prop</option>
+            <option value="Parlay">Parlay / Multi</option>
+          </select>
+        </div>
+        <div class="md:col-span-12">
+          <label id="edit-matchup-label" class="block text-xs font-semibold tracking-widest text-zinc-400 mb-1.5">MATCHUP / GAME</label>
+          <input id="edit-pick-matchup" type="text" class="w-full bg-zinc-950 border border-zinc-700 px-4 py-2.5 rounded-2xl text-sm">
+        </div>
+        <div id="edit-single-selection-wrap" class="md:col-span-12">
+          <label class="block text-xs font-semibold tracking-widest text-zinc-400 mb-1.5">SELECTION</label>
+          <input id="edit-pick-selection" type="text" class="w-full bg-zinc-950 border border-zinc-700 px-4 py-2.5 rounded-2xl text-sm">
+        </div>
+        <div id="edit-parlay-legs-section" class="hidden md:col-span-12 space-y-2">
+          <div class="flex justify-between items-center">
+            <label class="text-xs font-semibold tracking-widest text-zinc-400">PARLAY LEGS</label>
+            <button type="button" onclick="addParlayLegIn('edit-parlay-legs-container')" class="text-xs px-3 py-1 rounded-xl bg-zinc-800 text-blue-400">+ Add Leg</button>
+          </div>
+          <div id="edit-parlay-legs-container" class="space-y-2"></div>
+        </div>
+        <div class="md:col-span-4">
+          <label class="block text-xs font-semibold tracking-widest text-zinc-400 mb-1.5">ODDS (AMER)</label>
+          <input id="edit-pick-odds" type="text" class="w-full bg-zinc-950 border border-zinc-700 px-4 py-2.5 rounded-2xl text-sm font-mono">
+        </div>
+        <div class="md:col-span-4">
+          <label class="block text-xs font-semibold tracking-widest text-zinc-400 mb-1.5">UNITS</label>
+          <input id="edit-pick-stake" type="number" min="0.25" step="0.25" class="w-full bg-zinc-950 border border-zinc-700 px-4 py-2.5 rounded-2xl text-sm font-mono">
+        </div>
+        <div class="md:col-span-4">
+          <label class="block text-xs font-semibold tracking-widest text-zinc-400 mb-1.5">CONF.</label>
+          <div class="flex items-center gap-2">
+            <input id="edit-pick-confidence" type="range" min="1" max="10" step="1" class="w-full accent-amber-400"
+                   oninput="document.getElementById('edit-conf-val').innerText = this.value">
+            <span id="edit-conf-val" class="font-semibold w-5 text-center">7</span>
+          </div>
+        </div>
+        <div class="md:col-span-12">
+          <label class="block text-xs font-semibold tracking-widest text-zinc-400 mb-1.5">NOTES</label>
+          <textarea id="edit-pick-notes" rows="2" class="w-full bg-zinc-950 border border-zinc-700 px-4 py-2.5 rounded-2xl text-sm resize-y"></textarea>
+        </div>
+      </div>
+      <div class="flex justify-end gap-3 mt-6">
+        <button onclick="hideEditPickModal()" class="px-5 py-2.5 rounded-2xl border border-zinc-600 hover:bg-zinc-800 text-sm">Cancel</button>
+        <button onclick="saveEditPick()" class="px-6 py-2.5 rounded-2xl bg-amber-400 text-zinc-950 font-semibold text-sm">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MARK RESULT MODAL -->
+  <div id="mark-modal" onclick="if (event.target.id === 'mark-modal') hideMarkModal()" class="hidden fixed inset-0 bg-black/70 backdrop-blur z-[70] flex items-center justify-center p-4">
+    <div onclick="event.stopImmediatePropagation()" class="modal bg-zinc-900 border border-zinc-700 rounded-3xl w-full max-w-md p-6">
+      <div class="flex justify-between items-center mb-5">
+        <div>
+          <div class="font-semibold text-lg">Mark Result</div>
+          <div id="mark-modal-matchup" class="text-xs text-zinc-400"></div>
+        </div>
+        <button onclick="hideMarkModal()" class="text-2xl text-zinc-400 hover:text-white">×</button>
+      </div>
+
+      <div class="grid grid-cols-3 gap-3 mb-6">
+        <button onclick="setResult('won')" 
+                class="py-4 bg-emerald-900/70 hover:bg-emerald-900 border border-emerald-800 text-emerald-400 font-semibold rounded-2xl flex flex-col items-center">
+          <i class="fa-solid fa-trophy text-2xl mb-1"></i>
+          <span>WON</span>
+        </button>
+        <button onclick="setResult('lost')" 
+                class="py-4 bg-red-900/70 hover:bg-red-900 border border-red-800 text-red-400 font-semibold rounded-2xl flex flex-col items-center">
+          <i class="fa-solid fa-times text-2xl mb-1"></i>
+          <span>LOST</span>
+        </button>
+        <button onclick="setResult('push')" 
+                class="py-4 bg-amber-900/70 hover:bg-amber-900 border border-amber-700 text-amber-400 font-semibold rounded-2xl flex flex-col items-center">
+          <i class="fa-solid fa-equals text-2xl mb-1"></i>
+          <span>PUSH</span>
+        </button>
+      </div>
+
+      <div class="text-xs text-center text-zinc-500">This updates your stats and profit immediately.</div>
+    </div>
+  </div>
+
+  <!-- BET SLIP IMAGE GENERATOR MODAL -->
+  <div id="slip-modal" onclick="if (event.target.id === 'slip-modal') hideSlipModal()" class="hidden fixed inset-0 bg-black/80 backdrop-blur z-[90] flex items-center justify-center p-4">
+    <div onclick="event.stopImmediatePropagation()" class="modal bg-zinc-900 border border-zinc-700 rounded-3xl w-full max-w-[620px] overflow-hidden">
+      <!-- Modal Header -->
+      <div class="px-6 pt-5 pb-4 border-b border-zinc-700 flex items-center justify-between">
+        <div>
+          <div class="font-semibold text-xl flex items-center gap-x-2">
+            <i class="fa-solid fa-camera text-amber-400"></i>
+            <span>Create Shareable Image</span>
+          </div>
+          <div class="text-xs text-zinc-400 mt-0.5">Optimized for X / @JimNewBettingSite posts</div>
+        </div>
+        <button onclick="hideSlipModal()" class="text-3xl leading-none text-zinc-400 hover:text-white px-2">×</button>
+      </div>
+
+      <!-- Mode Tabs -->
+      <div class="px-6 pt-4 flex gap-2 border-b border-zinc-800">
+        <button id="slip-tab-pick" onclick="switchSlipMode('pick')"
+                class="px-5 py-1.5 text-sm font-medium rounded-t-2xl bg-zinc-800 text-white border-b-2 border-amber-400">Pick Slip</button>
+        <button id="slip-tab-record" onclick="switchSlipMode('record')"
+                class="px-5 py-1.5 text-sm font-medium rounded-t-2xl hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200">Record Summary</button>
+      </div>
+
+      <!-- Preview Area -->
+      <div class="p-6 bg-zinc-950 flex justify-center">
+        <div id="slip-preview"
+             class="w-full max-w-[520px] bg-[#0f0f11] border border-zinc-700 rounded-2xl overflow-hidden shadow-2xl"
+             style="box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.6);">
+          <!-- Dynamically populated by JS with either pick slip or record card content -->
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="px-6 py-5 bg-zinc-900 border-t border-zinc-700 space-y-4">
+        <!-- Pick-only options -->
+        <div id="slip-pick-options" class="flex items-center gap-4 text-sm">
+          <label class="flex items-center gap-x-2 cursor-pointer">
+            <input type="checkbox" id="slip-include-notes" checked onchange="renderSlipPreview()" class="w-4 h-4 accent-amber-400">
+            <span class="text-zinc-300">Include notes</span>
+          </label>
+          <div class="flex-1"></div>
+          <div class="text-xs px-3 py-1 bg-zinc-800 rounded-2xl text-amber-400/80">1080×1080 • High quality</div>
+        </div>
+
+        <!-- X Caption helper -->
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <div class="text-xs font-semibold tracking-widest text-zinc-400">X / TWITTER CAPTION</div>
+            <button onclick="copySlipCaption()" 
+                    class="text-xs px-3 py-1 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-blue-400 flex items-center gap-1.5">
+              <i class="fa-solid fa-copy text-xs"></i>
+              <span>COPY</span>
+            </button>
+          </div>
+          <textarea id="slip-caption" rows="2" readonly
+                    class="w-full bg-zinc-950 border border-zinc-700 text-sm rounded-2xl px-4 py-2.5 font-mono text-zinc-300 resize-y"></textarea>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex flex-col sm:flex-row gap-3 pt-1">
+          <button onclick="downloadSlipImage()"
+                  class="flex-1 h-12 rounded-2xl bg-gradient-to-r from-amber-400 to-yellow-400 text-zinc-950 font-bold flex items-center justify-center gap-x-2 hover:brightness-105 active:scale-[0.985] transition">
+            <i class="fa-solid fa-download"></i>
+            <span>DOWNLOAD PNG FOR X</span>
+          </button>
+          <button onclick="hideSlipModal()"
+                  class="flex-1 sm:flex-none h-12 px-8 rounded-2xl border border-zinc-600 hover:bg-zinc-800 text-sm font-medium">
+            CLOSE
+          </button>
+        </div>
+        <div class="text-[10px] text-center text-zinc-500">Pro tip: Post the image + caption together. Tag @JimNewBettingSite if you want.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HIDDEN / OFFSCREEN SLIP TEMPLATE (used as source for clean captures if needed) -->
+  <div id="slip-template" class="hidden fixed -left-[9999px] top-0 w-[1080px] bg-[#0f0f11] border border-zinc-700 rounded-2xl overflow-hidden" style="font-family: 'Inter', system_ui, sans-serif;">
+    <!-- Populated via JS for html2canvas when we want pixel-perfect offscreen render -->
+  </div>
+
+  <!-- TOAST CONTAINER -->
+  <div id="toast-container" class="fixed bottom-4 right-4 z-[80] flex flex-col gap-2"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>

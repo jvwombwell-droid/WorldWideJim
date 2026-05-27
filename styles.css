@@ -1,0 +1,163 @@
+/* Jim's Betting Results - Additional Styles */
+
+body {
+  scroll-behavior: smooth;
+}
+
+.hero-photo {
+  transform: scale(1.02);
+  filter: saturate(1.05) contrast(1.05);
+}
+
+.hero-bg {
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(244, 196, 48, 0.18) 0%, transparent 55%),
+    linear-gradient(160deg, rgba(20, 18, 24, 0.72) 0%, rgba(10, 10, 12, 0.88) 100%);
+  mix-blend-mode: multiply;
+}
+
+header .hero-overlay {
+  background: linear-gradient(
+    to bottom,
+    rgba(10, 10, 12, 0.35) 0%,
+    rgba(10, 10, 12, 0.72) 55%,
+    rgba(10, 10, 12, 0.95) 100%
+  );
+}
+
+.sport-tile {
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.2s ease;
+}
+
+.sport-tile img {
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sport-tile:hover {
+  transform: translateY(-3px);
+  border-color: rgba(244, 196, 48, 0.35);
+  box-shadow: 0 16px 32px -8px rgb(0 0 0 / 0.45);
+}
+
+.sport-tile:hover img {
+  transform: scale(1.06);
+}
+
+.sport-accent-card {
+  transition: transform 0.3s ease;
+}
+
+.sport-accent-card:hover {
+  transform: scale(1.03) rotate(0deg);
+}
+
+/* Custom scrollbar for tables */
+.overflow-x-auto::-webkit-scrollbar {
+  height: 6px;
+}
+.overflow-x-auto::-webkit-scrollbar-thumb {
+  background-color: #3f3f46;
+  border-radius: 20px;
+}
+
+/* Pick table row polish */
+#my-picks-tbody tr {
+  transition: background-color .1s ease;
+}
+
+#my-picks-tbody tr:hover {
+  background-color: #1f1f1f;
+}
+
+/* Parlay leg rows in submit form */
+.parlay-leg-row .parlay-leg-remove:disabled {
+  pointer-events: none;
+}
+
+/* Form inputs focus states */
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+}
+
+/* Status badges in table */
+.status-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  letter-spacing: -.2px;
+}
+
+/* Modal polish */
+#mark-modal .modal {
+  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.4);
+}
+
+/* Responsive tweaks */
+@media (max-width: 768px) {
+  .section-header {
+    font-size: 1.45rem;
+  }
+  
+  header h1 {
+    font-size: 2.75rem;
+    line-height: 1.05;
+  }
+}
+
+/* Confetti for big wins (optional fun) */
+@keyframes confetti-fall {
+  0% { transform: translateY(-20px) rotate(0deg); }
+  100% { transform: translateY(400px) rotate(600deg); }
+}
+
+.confetti {
+  position: fixed;
+  top: -20px;
+  width: 8px;
+  height: 8px;
+  z-index: 9999;
+  pointer-events: none;
+  animation: confetti-fall 1.6s linear forwards;
+  border-radius: 1px;
+}
+
+/* Nice number animation hint */
+.stat-value {
+  font-feature-settings: "tnum";
+}
+
+/* ============================================
+   BET SLIP IMAGE GENERATOR STYLES
+   ============================================ */
+#slip-preview {
+  box-shadow: 0 30px 70px -15px rgb(0 0 0 / 0.65), 
+              0 10px 20px -5px rgb(0 0 0 / 0.4);
+  border: 1px solid #27272a;
+  font-feature-settings: "tnum";
+}
+
+#slip-preview .font-display {
+  font-family: 'Space Grotesk', 'Inter', system_ui, sans-serif;
+  font-weight: 600;
+}
+
+/* Make the live preview feel like a real ticket */
+#slip-preview .status-badge {
+  letter-spacing: -.3px;
+}
+
+/* Subtle inner glow on the slip card itself when in modal */
+#slip-modal #slip-preview {
+  transition: transform 0.1s ease, box-shadow 0.2s ease;
+}
+
+#slip-modal #slip-preview:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 35px 80px -12px rgb(0 0 0 / 0.7);
+}
+
+/* Caption textarea mono polish */
+#slip-caption {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  line-height: 1.35;
+}
